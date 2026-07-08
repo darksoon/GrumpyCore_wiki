@@ -54,7 +54,25 @@ Der Server-Owner ist von der Rollenvergleichs-Regel ausgenommen. Der Bot-Hierarc
    - `Warn` per Button löst Eskalation nur aus, wenn der Klicker tatsächlich `Moderate Members` besitzt (verhindert, dass reine Support-Klicker über die Leiter einen Kick/Ban auslösen).
    - Timeout über den Button ist fest auf 10 Minuten gesetzt.
 
-### 2.4 Auto-Unban-Runner
+### 2.4 Anti-Nuke (`listeners/antiNuke.ts`)
+
+Ein passiver Listener auf `GuildAuditLogEntryCreate`, unabhängig von der Auto-Mod-Konfiguration (nicht in `mod.yml` einstellbar, fest im Code). Zählt pro Verursacher innerhalb eines 10-Sekunden-Fensters:
+
+| Aktion | Schwellenwert |
+|---|---|
+| Channel-Löschungen | 3 |
+| Bans | 5 |
+| Rollen-Löschungen | 3 |
+
+Wird ein Schwellenwert erreicht:
+1. Ein Alarm wird in `channels.alert` gepostet (optional mit Ping an `roles.alert-ping`).
+2. Dem Verursacher werden **sofort alle Rollen entzogen** (`roles.set([])`, ein einziger API-Call statt vieler einzelner — vermeidet Rate-Limit-Stacking während eines aktiven Angriffs).
+3. Der Server-Owner wird von der Rollen-Entfernung ausgenommen (API würde ohnehin fehlschlagen).
+4. Eine 60-Sekunden-Cooldown verhindert wiederholtes Neutralisieren desselben Verursachers innerhalb eines zweiten Bursts.
+
+Dieser Schutz ist **immer aktiv**, sofern `addons.mod: true` — es gibt keinen eigenen Ein-/Ausschalter dafür.
+
+### 2.5 Auto-Unban-Runner
 
 - Läuft alle 60 Sekunden, einmal sofort beim Start (holt verpasste Tempban-Abläufe nach).
 - Sucht alle `Punishment`-Zeilen `type: 'ban'`, `active: true`, `expiresAt <= jetzt`.
