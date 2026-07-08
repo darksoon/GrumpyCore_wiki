@@ -1,36 +1,37 @@
 # Mod-Workflow
 
-Typische Abläufe im Moderations-Alltag.
+Typische Abläufe im Moderations-Alltag mit GrumpyCore.
 
 ---
 
 ## Regelverstoß — manuell
 
 ```
-1. /mod warn @User [Regelverstoß als Grund]
-   → User bekommt DM + Eintrag im Staff-Channel (P#ID)
-   → Mod-Log wird automatisch aktualisiert
+1. /mod warn user:@User reason:"Regelverstoß als Grund"
+   → Eintrag P-# wird angelegt, zählt zur Eskalation
 
-2. Wiederholt? → /mod warn erneut → Eskalation automatisch
-   Stufe 3 → Timeout (10 Min)
-   Stufe 4 → Kick
-   Stufe 5+ → Ban
+2. Wiederholt? → erneut /mod warn → Eskalation läuft automatisch
+   (Standard-Leiter: 3 Warns → Mute 60min · 5 Warns → Kick · 7 Warns → Ban
+    — konfigurierbar in mod.yml → escalation)
 ```
+
+Für einen befristeten Ban direkt: `/mod tempban user:@User duration:3d reason:"..."` — wird nach Ablauf automatisch per Auto-Unban-Runner aufgehoben (Prüfung alle 60 Sekunden).
 
 ---
 
 ## Report bearbeiten
 
 ```
-1. User meldet jemanden mit /report @User [Grund]
-2. Report erscheint im Staff-Channel mit Buttons
-3. Mod prüft den Fall
-4. Aktion wählen:
-   ❌ Ablehnen → Report-Embed wird als "Abgelehnt" markiert
-   ⚠️ Warn     → Verwarnung wird erteilt (P#ID)
-   ⏱️ Timeout  → 10 Minuten Timeout
-   👢 Kick     → Sofort-Kick
-   🔨 Ban      → Sofort-Ban
+1. User meldet jemanden: /report user:@User reason:"Grund" [proof: Screenshot]
+2. Report erscheint im konfigurierten Kanal (channels.staff → mod.yml reportChannelId → channels.mod-log)
+   mit Buttons: Deny / Warn / Timeout / Kick / Ban
+3. Mod/Support prüft den Fall, wählt eine Aktion:
+   ❌ Deny     → nur Support-Rolle oder Moderate Members nötig
+   ⚠️ Warn     → nur Support-Rolle oder Moderate Members nötig
+   ⏱️ Timeout  → zusätzlich Moderate Members nötig (fest 10 Min.)
+   👢 Kick     → zusätzlich Kick Members nötig
+   🔨 Ban      → zusätzlich Ban Members nötig
+4. Buttons werden nach der Aktion deaktiviert, Status wird im Embed vermerkt
 ```
 
 ---
@@ -38,33 +39,26 @@ Typische Abläufe im Moderations-Alltag.
 ## Ticket bearbeiten
 
 ```
-1. Neues Ticket öffnet sich → Support-Rollen werden gepingt
-2. Verfügbarer Supporter klickt 📌 Claim → Thread wird zugewiesen
+1. Neues Ticket öffnet über ein Panel → Staff-Rollen der Kategorie werden gepingt
+2. Verfügbarer Supporter klickt "Claim" → Ticket wird zugewiesen (atomar, kein Doppel-Claim)
 3. Problem lösen
-4. Ticket schließen → 🔒 Schließen klicken
-   → Transcript wird automatisch in #ticket-log gepostet
-   → User bekommt Rating-DM (1-5 ⭐)
-5. Falls weg müssen → Ticket an Kollegen: 📌 Unclaim → anderer claimen
+4. Ticket schließen → Close-Button (Modal mit optionalem Grund) oder /ticket close
+   → Transcript wird automatisch generiert und in Log-/Transcript-Kanal gepostet
+   → Owner bekommt Rating-Prompt (1-5 ⭐, standardmäßig per DM)
+   → Channel wird nach 5 Sekunden gelöscht
+5. Falls nötig: /ticket transfer category:<id> verschiebt in eine andere Kategorie
 ```
 
----
-
-## Inaktives Ticket
-
-```
-Bot macht das automatisch:
-- 48h keine Aktivität → Warnung im Ticket + DM an User
-- Weitere 24h keine Reaktion → automatisch geschlossen mit Transcript
-```
+**Inaktive Tickets** werden automatisch geschlossen, wenn die Kategorie `autoCloseAfterHours > 0` hat und seit `lastActivityAt` entsprechend viel Zeit vergangen ist (Scan-Intervall Standard 30 Min.).
 
 ---
 
 ## Punishment-History checken
 
 ```
-/history @User
-→ Tabs: ⚠️ Warns | 👢 Kicks | 🔨 Bans | ⏱️ Timeouts
-→ Zeigt alle P#IDs mit Datum und Moderator
+/mod history user:@User
+→ Zeigt bis zu 25 Einträge (🟢 aktiv / ⚫ inaktiv), neueste zuerst
+→ Jeder Eintrag mit P-#-ID, Moderator, Zeitstempel, ggf. Ablaufzeit
 ```
 
 ---
@@ -73,28 +67,29 @@ Bot macht das automatisch:
 
 ```
 Falsche Verwarnung ausgestellt?
-→ /mod warns @User → P#ID der falschen Verwarnung notieren
-→ /mod unwarn [ID] → nur diese Verwarnung löschen
-  (Berechtigung: Server verwalten)
-
-Alle Verwarnungen eines Users löschen:
-→ /mod clearwarns @User
-  (Berechtigung: Administrator)
+→ /mod history user:@User → P-#-ID der falschen Verwarnung notieren
+→ /mod unwarn id:<ID> → markiert nur diese Verwarnung als inaktiv
+  (zählt danach nicht mehr zur Eskalation, bleibt aber in der History sichtbar)
 ```
+
+Es gibt **keinen** globalen "alle Verwarnungen löschen"-Befehl — nur einzelne, gezielte `unwarn`.
 
 ---
 
 ## Ban aufheben
 
 ```
-/mod unban [User-ID]
-→ User-ID nötig (nicht Username) — aus dem Mod-Log oder Audit-Log kopieren
+/mod unban user-id:<Discord-User-ID>
+→ User-ID nötig (nicht Username) — z.B. aus dem Mod-Log oder /mod history kopieren
 ```
+
+Bei einem `/mod tempban` ist kein manuelles Unban nötig — der Auto-Unban-Runner hebt ihn automatisch zum konfigurierten Zeitpunkt auf.
 
 ---
 
 ## Tipps
 
-- **Immer einen Grund angeben** — erscheint im Mod-Log und in der DM an den User
-- **P#IDs notieren** wenn Fälle dokumentiert werden müssen
-- **Rollen-Hierarchie** beachten — Bot blockiert automatisch wenn du höherrangige User moderieren willst
+- **Immer einen Grund angeben** (`reason`) — erscheint im Mod-Log und (bei Warn/Kick/Ban) in der Aktion selbst.
+- **P-#-IDs notieren**, wenn Fälle dokumentiert werden müssen.
+- **Rollen-Hierarchie beachten** — der Bot blockiert automatisch, wenn versucht wird, einen gleich- oder höherrangigen User zu moderieren.
+- Bei Auto-Mod-Treffern (Spam/Flood/Phishing/etc.) läuft die Eskalation identisch zu manuellen Warns — Auto-Mod-Warns zählen mit.
