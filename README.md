@@ -3,7 +3,7 @@
 Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord-Bot von Minetechworld.de.
 
 > Entwickelt von **darksoon** · Repo: [Forgejo](https://dev.sven-neurath.de/darksoon/GrumpyCore) ([GitHub-Spiegel](https://github.com/darksoon/GrumpyCore))
-> Stand dieses Wikis: main-Branch, 21 Module, TypeScript/Sapphire/discord.js v14/Prisma
+> Stand dieses Wikis: main-Branch, 23 Module, TypeScript/Sapphire/discord.js v14/Prisma
 
 ---
 
@@ -54,6 +54,8 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 - [RSS](addons/rss.md) — Feed-Abos mit automatischem Posten neuer Einträge
 - [Serverstats](addons/serverstats.md) — Live-Zähler-Channels (Mitglieder/Boosts/...)
 - [Settings](addons/settings.md) — Zentrale Modul- und Channel-Konfiguration per Slash-Command
+- [YouTube](addons/youtube.md) — Upload-Benachrichtigungen, kein API-Key nötig
+- [Twitch](addons/twitch.md) — Live-Benachrichtigungen (braucht kostenlose Twitch-App-Zugangsdaten)
 
 ### 👥 Für Staff
 
@@ -73,7 +75,7 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 
 ---
 
-## Alle Module im Überblick (21)
+## Alle Module im Überblick (23)
 
 | Modul | Addon-Key | Zweck |
 |---|---|---|
@@ -98,6 +100,8 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 | Announcements | `announcements` | Geplante Ankündigungen |
 | Events | `events` | Serverevents mit RSVP |
 | Settings | `settings` | Zentrale Konfiguration per Slash-Command |
+| YouTube | `youtube` | Upload-Benachrichtigungen (kein API-Key nötig) |
+| Twitch | `twitch` | Live-Benachrichtigungen (braucht Twitch-App-Zugangsdaten) |
 
 Jedes Modul lässt sich einzeln über `addons.<key>: false` in `config.yml` deaktivieren.
 

@@ -15,6 +15,8 @@ guildId: "DEINE_SERVER_ID"
 language: "de"              # de | en
 ownerIds: []                # Discord-User-IDs mit voller Kontrolle
 errorWebhook: ""            # Optional: Discord-Webhook-URL für Crash-Meldungen
+twitchClientId: ""          # Optional: Twitch-App Client ID (dev.twitch.tv) — für das Twitch-Modul
+twitchClientSecret: ""      # Optional: Twitch-App Client Secret — für das Twitch-Modul
 
 # ── Addons — true = aktiv, false = deaktiviert ──────────────────────────────
 addons:
@@ -33,6 +35,14 @@ addons:
   starboard: true
   reminders: true
   birthdays: true
+  rss: true
+  giveaways: true
+  serverstats: true
+  announcements: true
+  events: true
+  settings: true
+  youtube: true
+  twitch: true
 
 # ── Channels — alle Channel-IDs an einem Platz ──────────────────────────────
 channels:
