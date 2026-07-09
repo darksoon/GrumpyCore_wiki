@@ -101,8 +101,10 @@ Dieser Schutz ist **immer aktiv**, sofern `addons.mod: true` — es gibt keinen 
 | `note` | `user`, `note` (beide required) | — |
 | `softban` | `user` (required), `reason`, `delete-days` (Default 1) optional | `Ban Members` |
 | `reload` | — | `Manage Guild` |
+| `modlog-search` | `user`/`moderator`/`type` (warn/kick/ban/softban/mute/note)/`days` (1–3650) alle optional | — |
+| `modlog-export` | `user`/`type`/`days` alle optional | — |
 
-Details: Ban/Tempban/Softban/Unban führen die Discord-API-Aktion immer zuerst aus — schlägt sie fehl, wird kein Punishment-Eintrag angelegt. `note` erzeugt einen Eintrag ohne DM/Eskalationszählung.
+Details: Ban/Tempban/Softban/Unban führen die Discord-API-Aktion immer zuerst aus — schlägt sie fehl, wird kein Punishment-Eintrag angelegt. `note` erzeugt einen Eintrag ohne DM/Eskalationszählung. `modlog-search` zeigt bis zu 25 Treffer als Embed (🟢/⚫ aktiv/inaktiv, Moderator, Zeitstempel), Footer nennt Trefferzahl vs. Gesamtzahl. `modlog-export` liefert dieselben Filter (außer `moderator`) als CSV-Anhang (`id,type,userId,moderatorId,reason,active,createdAt,expiresAt`) — Grund-Feld ist gegen CSV-Formel-Injection (`=`, `+`, `-`, `@`, Tab, CR am Zeilenanfang) durch führendes `'` abgesichert.
 
 ### `/report` (jeder Nutzer)
 

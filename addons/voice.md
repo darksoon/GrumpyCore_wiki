@@ -33,6 +33,17 @@ Verlässt der letzte menschliche Nutzer den Channel, startet ein Timer (`emptyDe
 
 Pro-Nutzer-Lock mit eindeutigem Token verhindert, dass ein langsamer erster Durchlauf das Lock eines zweiten, späteren Durchlaufs löscht. Zusätzlich gibt es einen **Rename-Cooldown** (5 Minuten) als Puffer unter Discords Rate-Limit (2 Renames/10 Min pro Channel).
 
+### 2.5 Control-Panel im Text-Chat
+
+Jeder neu erstellte temporäre Voice-Channel bekommt in seinem eigenen Text-Chat ein Embed mit fünf Buttons: **Lock** 🔒, **Unlock** 🔓, **Limit** 🔢, **Rename** ✏️, **Claim** 👑 — eine Alternative zu den `/voice`-Subcommands direkt im Channel.
+
+- **Lock/Unlock**: nur der Owner darf klicken; setzt/entfernt denselben `@everyone`-Connect-Deny-Overwrite wie `/voice lock`/`unlock`.
+- **Limit**: öffnet ein Modal (Zahlen-Eingabe, 1–2 Zeichen) für das neue Nutzerlimit — nur Owner.
+- **Rename**: öffnet ein Modal (Textfeld, 1–100 Zeichen) für den neuen Kanalnamen — nur Owner.
+- **Claim**: für jedes Mitglied im Channel klickbar, sofern der aktuelle Owner nicht mehr anwesend ist. Nutzt denselben **atomaren Compare-and-Set** (`tryClaimOwner`) wie `/voice claim`: Owner-Prüfung (Anwesenheit, "bin schon Owner") zuerst, dann ein DB-Write, der nur gewinnt, wenn seit dem Lesen kein anderer Klick bereits den Owner gewechselt hat — verhindert, dass zwei gleichzeitige Claims auf denselben verwaisten Channel beide durchgehen. Nach gewonnenem Claim wird der **alte Owner-Permission-Overwrite vollständig gelöscht** (nicht nur die Management-Rechte genullt) — sonst bliebe dessen ursprünglicher Connect-Allow-Overwrite bestehen und würde einen späteren Lock durch den neuen Owner aushebeln.
+
+Panel-Klicks laufen als eigenständige Re-Implementierung der `/voice`-Command-Logik (gleiche Discord-API-Calls und State-Mutationen, aber eigener Interaction-Handler) — funktional identisch zu den entsprechenden Slash-Subcommands.
+
 ## 3. Slash-Commands
 
 Alle Subcommands (außer `reload`) erfordern, dass der Nutzer **aktuell in einem verwalteten Voice-Channel** ist.

@@ -3,7 +3,7 @@
 Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord-Bot von Minetechworld.de.
 
 > Entwickelt von **darksoon** · Repo: [Forgejo](https://dev.sven-neurath.de/darksoon/GrumpyCore) ([GitHub-Spiegel](https://github.com/darksoon/GrumpyCore))
-> Stand dieses Wikis: main-Branch, 15 Module, TypeScript/Sapphire/discord.js v14/Prisma
+> Stand dieses Wikis: main-Branch, 21 Module, TypeScript/Sapphire/discord.js v14/Prisma
 
 ---
 
@@ -43,11 +43,17 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 - [Suggestions](addons/suggestions.md) — Vorschläge einreichen, abstimmen, Status verwalten
 - [Polls](addons/polls.md) — Live-Abstimmungen mit Button-Voting
 - [News](addons/news.md) — Admin-DM-Workflow für News-Posts
+- [Announcements](addons/announcements.md) — Geplante Ankündigungen (einmalig/täglich/wöchentlich/monatlich)
+- [Events](addons/events.md) — Serverevents mit RSVP-Buttons und Start-Ping
+- [Giveaways](addons/giveaways.md) — Gewinnspiele mit Toggle-Entry und automatischer Ziehung
 
 **Utility**
 
 - [Reminders](addons/reminders.md) — Persönliche Erinnerungen (`/remind`)
 - [Birthdays](addons/birthdays.md) — Geburtstage speichern + automatisch gratulieren
+- [RSS](addons/rss.md) — Feed-Abos mit automatischem Posten neuer Einträge
+- [Serverstats](addons/serverstats.md) — Live-Zähler-Channels (Mitglieder/Boosts/...)
+- [Settings](addons/settings.md) — Zentrale Modul- und Channel-Konfiguration per Slash-Command
 
 ### 👥 Für Staff
 
@@ -67,7 +73,7 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 
 ---
 
-## Alle Module im Überblick (15)
+## Alle Module im Überblick (21)
 
 | Modul | Addon-Key | Zweck |
 |---|---|---|
@@ -75,17 +81,23 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 | Moderation | `mod` | Warn/Kick/Ban/Tempban, Auto-Mod, Reports |
 | Tickets | `tickets` | Support-Ticket-System |
 | News | `news` | DM-basierte News-Posts |
-| Voice | `voice` | Join-to-Create |
+| Voice | `voice` | Join-to-Create + Control-Panel |
 | Help | `help` | Interaktives Help-Hub |
 | CustomCmd | `customcmd` | Admin-definierte Befehle |
 | Music | `music` | Internet-Radio |
 | ReactionRoles | `reactionroles` | Self-Service-Rollen |
-| Leveling | `leveling` | XP & Ränge |
+| Leveling | `leveling` | XP & Ränge, Boosts, Zeitraum-Leaderboards |
 | Suggestions | `suggestions` | Vorschläge & Voting |
-| Polls | `polls` | Live-Abstimmungen |
+| Polls | `polls` | Live-Abstimmungen mit Chart |
 | Starboard | `starboard` | Beliebte Nachrichten hervorheben |
 | Reminders | `reminders` | Persönliche Erinnerungen |
 | Birthdays | `birthdays` | Geburtstage & Glückwünsche |
+| RSS | `rss` | Feed-Abos mit Auto-Posting |
+| Giveaways | `giveaways` | Gewinnspiele mit Auto-Ziehung |
+| Serverstats | `serverstats` | Live-Zähler-Channels |
+| Announcements | `announcements` | Geplante Ankündigungen |
+| Events | `events` | Serverevents mit RSVP |
+| Settings | `settings` | Zentrale Konfiguration per Slash-Command |
 
 Jedes Modul lässt sich einzeln über `addons.<key>: false` in `config.yml` deaktivieren.
 
