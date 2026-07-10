@@ -3,7 +3,7 @@
 Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord-Bot von Minetechworld.de.
 
 > Entwickelt von **darksoon** · Repo: [Forgejo](https://dev.sven-neurath.de/darksoon/GrumpyCore) ([GitHub-Spiegel](https://github.com/darksoon/GrumpyCore))
-> Stand dieses Wikis: main-Branch, 23 Module, TypeScript/Sapphire/discord.js v14/Prisma
+> Stand dieses Wikis: main-Branch, 24 Module, TypeScript/Sapphire/discord.js v14/Prisma
 
 ---
 
@@ -37,6 +37,7 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 - [Reaction Roles](addons/reactionroles.md) — Self-Service-Rollen über Buttons/Dropdowns
 - [Starboard](addons/starboard.md) — Automatisches Hervorheben beliebter Nachrichten
 - [Custom Commands](addons/customcmd.md) — Admin-definierte `/cmd`-Befehle (Text/Embed/Role-Toggle)
+- [Text-Trigger ("Tags")](addons/triggers.md) — Automatische Antworten auf Stichwörter, ohne Befehl nötig
 
 **Feedback & Kommunikation**
 
@@ -75,7 +76,7 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 
 ---
 
-## Alle Module im Überblick (23)
+## Alle Module im Überblick (24)
 
 | Modul | Addon-Key | Zweck |
 |---|---|---|
@@ -92,6 +93,7 @@ Willkommen im offiziellen Wiki für **GrumpyCore**, den selbstgehosteten Discord
 | Suggestions | `suggestions` | Vorschläge & Voting |
 | Polls | `polls` | Live-Abstimmungen mit Chart |
 | Starboard | `starboard` | Beliebte Nachrichten hervorheben |
+| Triggers | `triggers` | Automatische Antworten auf Stichwörter ("Tags") |
 | Reminders | `reminders` | Persönliche Erinnerungen |
 | Birthdays | `birthdays` | Geburtstage & Glückwünsche |
 | RSS | `rss` | Feed-Abos mit Auto-Posting |

@@ -66,6 +66,62 @@ leave:
 
 ---
 
+## Boost-Ankündigungen
+
+Startet ein Mitglied das Boosten des Servers (Nitro-Boost), postet der Bot **einmalig** eine Danke-Nachricht im
+Welcome-Channel (`channels.welcome`). Das ist etwas anderes als der reine Boost-**Zähler** im
+[Serverstats-Modul](serverstats.md) (der zeigt nur "aktuell X Boosts" als Channel-Name, ohne bei jedem neuen
+Boost extra zu posten) — hier geht's um die konkrete "Danke fürs Boosten!"-Nachricht direkt beim jeweiligen
+Ereignis.
+
+Anpassen in `configs/modules/welcome.yml`:
+```yaml
+boost:
+  enabled: true
+  embed:
+    title: "💜 Neuer Boost!"
+    description: "%user_mention% hat **%guild_name%** geboostet! Danke für die Unterstützung!"
+    color: "#F47FFF"
+    thumbnail: "%user_avatar%"
+    timestamp: true
+```
+Gleiche Platzhalter wie bei Join/Leave (`%user_mention%`, `%guild_name%`, `%user_avatar%` usw.).
+
+**Wenn nichts gepostet wird:** Prüfe, ob `channels.welcome` in `configs/config.yml` gesetzt ist — ohne diesen
+Channel passiert nichts (stillschweigend, kein Fehler im Log).
+
+---
+
+## Sticky Roles — Rollen bei Rejoin automatisch zurückbekommen
+
+Verlässt jemand den Server und tritt später wieder bei, bekommt er seine vorherigen Rollen **automatisch
+zurück** — ohne dass ein Mod sie manuell neu vergeben muss. Praktisch z.B. wenn jemand versehentlich den Server
+verlässt oder kurzzeitig weg ist und danach wieder mitmachen will.
+
+**Was NICHT wiederhergestellt wird** (mit Absicht):
+- Die `@everyone`-Rolle (die hat sowieso jeder automatisch).
+- **Managed Rollen** — das sind Rollen, die von einer Discord-Integration oder einem anderen Bot automatisch
+  verwaltet werden (z.B. eine Twitch-Sub-Rolle, eine Musik-Bot-eigene Rolle). Die vergibt die jeweilige
+  Integration bei Bedarf selbst neu — GrumpyCore würde sich da nur einmischen.
+- Rollen, die **inzwischen gelöscht** wurden.
+- Rollen, die **höher stehen als die höchste Rolle des Bots selbst** — Discord verbietet grundsätzlich, dass
+  ein Bot Rollen vergibt, die über seiner eigenen Position in der Rollenliste stehen (Server-Einstellungen →
+  Rollen). Betrifft das der Fall, wird einfach nur diese eine Rolle übersprungen, der Rest wird trotzdem
+  wiederhergestellt.
+
+**Zeitfenster:** Rollen werden nur wiederhergestellt, wenn der Rejoin innerhalb von `maxAgeDays` (Standard 30
+Tage) nach dem Verlassen passiert. Tritt jemand ein Jahr später wieder bei, wären die alten Rollen vermutlich
+ohnehin nicht mehr passend — dann bleibt es bei den normalen Standard-Rollen für neue Mitglieder.
+
+Konfiguration in `configs/modules/welcome.yml`:
+```yaml
+stickyRoles:
+  enabled: true
+  maxAgeDays: 30
+```
+
+---
+
 ## /welcome — Admin-Commands (`ManageGuild`)
 
 | Command | Funktion |

@@ -6,11 +6,13 @@ Das `mod`-Modul ist das zentrale Moderationssystem von GrumpyCore. Es bündelt:
 
 - **Klassische Moderationsaktionen**: Warn, Kick, Ban, Tempban (befristeter Ban mit Auto-Unban), Mute (Timeout), Softban, Note, Unmute, Unban, Unwarn
 - **Eskalationsleiter**: automatische Folgeaktion (Mute → Kick → Ban), sobald ein Mitglied eine konfigurierte Zahl aktiver Verwarnungen erreicht
-- **Auto-Mod**: passiver Nachrichten-Scanner (Anti-Spam, Anti-Flood, Anti-Ad, Anti-Phishing, Anti-Caps, Anti-Repeat, Wortfilter)
+- **Auto-Mod**: passiver Nachrichten-Scanner (Anti-Spam, Anti-Flood, Anti-Ad, Anti-Phishing inkl. URLhaus-Bedrohungsfeed, Anti-Caps, Anti-Repeat, Wortfilter)
 - **Report-System**: `/report`-Befehl für normale Mitglieder + Button-Panel für Staff
 - **Mod-Log**: automatisches Protokoll aller Aktionen in einem konfigurierten Textkanal
+- **Message-Log**: zeigt den tatsächlichen Inhalt gelöschter/bearbeiteter Nachrichten (auch bei Selbstlöschung durch den Autor)
 - **Punishment-History**: jede Aktion wird als `Punishment`-Datensatz gespeichert, abrufbar über `/mod history`
 - **Auto-Unban-Runner**: Hintergrundprozess, der abgelaufene Tempbans automatisch aufhebt
+- **`/mod nuke`**: Channel in Sekunden komplett zurücksetzen (löscht wirklich ALLE Nachrichten, auch uralte)
 
 Aktivierung über `addons.mod` in `configs/config.yml` (Default `true`), Konfiguration über `configs/modules/mod.yml`.
 
@@ -80,6 +82,105 @@ Dieser Schutz ist **immer aktiv**, sofern `addons.mod: true` — es gibt keinen 
 - Bei Erfolg: Ban-Zeile auf inaktiv, neuer `unban`-Eintrag, Mod-Log-Post.
 - **Wichtig:** `/mod tempban` legt keinen eigenen Typ „tempban" an — es ist ein normaler `type: 'ban'` mit `expiresAt` gesetzt, nutzt also dieselbe Eskalations-/History-/Log-Darstellung wie ein Permanent-Ban.
 
+### 2.6 Anti-Phishing — Schutz vor Fake-Nitro-Links & Scam-Seiten
+
+Das ist der Check, der z.B. gefälschte "Kostenloses Discord Nitro"-Links erkennt, die man in Discord-Servern
+ständig als Spam-DM oder in Chat-Nachrichten sieht (Muster: `dlscord-nitro.com`, `steam-community-gg.tk` usw.).
+Läuft **immer als erster** Auto-Mod-Check (bevor Anti-Ad, Anti-Caps usw.), damit ein Phishing-Treffer nie von
+einem schwächeren Check überdeckt wird.
+
+Zwei unabhängige Erkennungswege, beide gleichzeitig aktiv (wenn beide `enabled`):
+
+**a) Eingebaute Heuristik (`useBuiltinHeuristics`)** — rein lokal, kein Internetzugriff nötig:
+- **Marken-Impersonation**: erkennt Domains, die `discord`, `nitro` oder `steam` als eigenständigen Namensteil
+  enthalten (z.B. `dlscord-nitro.com`, `steam-community-gg.tk`), aber NICHT die echte, bekannte Domain sind
+  (`discord.com`, `discord.gg`, `steamcommunity.com` usw. sind immer erlaubt). Ein Link wie `steamworks.dev`
+  oder `mysteamgame.com` löst **nicht** aus, obwohl "steam" im Namen vorkommt — nur wenn "steam" als eigenes,
+  durch Punkt/Bindestrich abgegrenztes Wort auftaucht.
+- **Verdächtige TLD + Köder-Wort**: Domains mit den TLDs `.tk`/`.ml`/`.ga`/`.cf`/`.gq`/`.zip`/`.mov` lösen NUR
+  aus, wenn die Nachricht zusätzlich ein Köder-Wort enthält (`free`, `gratis`, `nitro`, `gift`, `geschenk`,
+  `airdrop`, `claim`, `giveaway`). Ein normaler `.tk`-Link ohne diese Wörter wird NICHT blockiert (zu viele
+  False Positives sonst).
+
+**b) URLhaus-Bedrohungsfeed (`useUrlhaus`)** — externe, ständig aktualisierte Liste bekannter Malware-/Phishing-URLs
+von [abuse.ch](https://urlhaus.abuse.ch/), einem kostenlosen, seriösen Sicherheitsprojekt (kein API-Key nötig):
+- Der Bot lädt die Liste **stündlich neu** (aktuell ca. 15.000 Einträge) und hält sie als lokalen Cache
+  (`cache/urlhaus-urls.txt`) — dadurch ist der eigentliche Check pro Nachricht blitzschnell (reiner
+  Speicher-Abgleich, kein Netzwerk-Aufruf während des Chattens).
+  - **Wichtiger Unterschied zur eingebauten Heuristik**: URLhaus erkennt keine Marken-Namen, sondern exakt
+  bekannte, bereits gemeldete bösartige URLs (Malware-Download-Links, Phishing-Seiten aus der ganzen Welt) —
+  deckt also viel mehr ab als nur Nitro-/Steam-Fakes, dafür nur wenn die URL schon einmal gemeldet wurde.
+- Fällt der Download mal aus (Netzwerkproblem), bleibt der zuletzt geladene Cache aktiv — es gibt also nie eine
+  Lücke, in der der Schutz komplett aus ist.
+
+**c) Admin-eigene Sperrliste (`customBlocklist`)** — feste Liste von Domains, die IMMER blockiert werden, egal
+was die anderen beiden Checks sagen. Praktisch für Domains, die im eigenen Server schon mal Ärger gemacht haben.
+Subdomains werden automatisch mit erfasst (ein Eintrag `bad-site.com` blockiert auch `sub.bad-site.com`).
+
+**Konkretes Beispiel:** Postet ein Mitglied `Kostenloses Nitro hier: dlscord-glft.tk 🎁`, greift:
+1. Marken-Impersonation erkennt `dlscord` (Tippfehler-Variante von "discord") → sofortiger Treffer, unabhängig
+   von URLhaus oder dem Köder-Wort-Check.
+
+Postet stattdessen jemand nur `dlscord-glft.tk` ohne erkennbaren Markennamen, aber die URL steht zufällig schon
+in der URLhaus-Datenbank (weil sie schon anderswo als Malware-Verteiler gemeldet wurde), greift Check (b) —
+selbst wenn Check (a) nichts findet.
+
+**Was danach passiert**, steht in `action` (`warn`/`delete`/`timeout`/`nothing`) und `deleteMessages` — Standard
+ist `timeout` für 60 Minuten + Nachricht löschen (das schärfste Auto-Mod-Preset überhaupt, weil Phishing-Links
+am gefährlichsten sind).
+
+### 2.7 Message-Log — Inhalt gelöschter/bearbeiteter Nachrichten sehen
+
+Discords eigenes, natives Audit-Log (das, was `/mod` NICHT direkt zeigt, sondern was Discord selbst mitschreibt)
+hat zwei große Lücken: es zeigt **nie den Nachrichteninhalt**, und es erfasst **nur Löschungen durch Moderatoren**
+an fremden Nachrichten — löscht ein User seine eigene Nachricht selbst, taucht das dort gar nicht auf. Ebenso
+werden Bearbeitungen (Edits) von Discord überhaupt nicht protokolliert.
+
+Das Message-Log schließt diese Lücke: es postet bei **jeder** Löschung/Bearbeitung im Server (unabhängig davon,
+wer sie ausgelöst hat) eine Nachricht mit dem tatsächlichen Inhalt in `channels.mod-log`:
+
+- **Löschung**: Autor, Kanal, kompletter Nachrichtentext, Liste eventueller Anhänge (Bild-/Datei-URLs)
+- **Bearbeitung**: Autor, Kanal, Link zur bearbeiteten Nachricht, Text **vorher** und **nachher** nebeneinander
+- **Massenlöschung** (z.B. `/mod purge`): Kanal, Gesamtzahl, bis zu 10 Beispiel-Nachrichten mit Inhalt
+
+**Wichtige Einschränkung** (kein Bug, sondern eine echte Discord-Grenze): Wurde eine Nachricht schon vor dem
+letzten Bot-Neustart gepostet oder ist sie älter als die letzten ca. 200 Nachrichten im jeweiligen Kanal, hat
+Discord dem Bot ihren Inhalt nie übermittelt — in diesem Fall wird bewusst **gar nichts** gepostet (lieber
+stillschweigend nichts zeigen als eine leere "irgendwas wurde gelöscht"-Nachricht ohne Mehrwert).
+
+Konfiguration in `configs/modules/mod.yml`:
+```yaml
+messageLog:
+  enabled: true         # Modul komplett an/aus
+  logEdits: true        # Bearbeitungen protokollieren
+  logDeletes: true      # Löschungen protokollieren
+  ignoreBots: true       # Bot-eigene Nachrichten (Ticket-Panels, Embeds, ...) NICHT protokollieren — reines Rauschen sonst
+```
+
+### 2.8 `/mod nuke` — Channel komplett zurücksetzen
+
+`/mod clear` und `/mod purge` (siehe Befehlstabelle unten) können **keine Nachrichten löschen, die älter als 14
+Tage sind** — das ist eine feste Grenze von Discords eigener API, kein Limit von GrumpyCore. Will man einen
+Channel WIRKLICH komplett leeren (z.B. weil er vollgespammt oder eskaliert ist), reicht Bulk-Delete also nicht.
+
+`/mod nuke` löst das anders: der Channel wird **geklont** (identischer Name, identische Rechte, identische
+Position in der Kanalliste) und der alte Channel wird danach komplett gelöscht. Das ist sofort, betrifft
+wirklich jede Nachricht unabhängig vom Alter, und danach postet der Bot ein Embed
+("☢️ CHANNEL NUKED — Everybody who was here is gone. 💥") im frischen Channel.
+
+**Achtung, das ist nicht rückgängig zu machen** — alle Nachrichten im Channel sind danach unwiederbringlich weg
+(auch die, die im Message-Log oder Mod-Log referenziert wurden, zeigen dann nur noch tote Links). Deswegen
+braucht `/mod nuke` extra `Manage Channels`, nicht nur `Manage Messages` wie `/mod clear`/`purge` — ein
+gewöhnlicher Nachrichten-Moderator soll das nicht versehentlich auslösen können.
+
+Optional kann man in `configs/modules/mod.yml` ein eigenes GIF/Bild für die Nuke-Nachricht hinterlegen:
+```yaml
+nuke:
+  gifUrl: ""   # z.B. "https://example.com/mushroom-cloud.gif" — leer = kein Bild, nur Text
+```
+(Absichtlich standardmäßig leer statt mit einem fest eingebauten Link — ein von uns nicht kontrollierter
+externer Link könnte irgendwann offline gehen und dann würde das Embed kaputt aussehen.)
+
 ## 3. Slash-Commands
 
 ### `/mod` (Basis-Berechtigung: `Moderate Members`)
@@ -98,6 +199,7 @@ Dieser Schutz ist **immer aktiv**, sofern `addons.mod: true` — es gibt keinen 
 | `clear` | `count` (required, 1–100) | `Manage Messages` |
 | `purge` | `scan` (1–200 required), `user`/`bots`/`contains`/`attachments` optional | `Manage Messages` |
 | `slowmode` | `seconds` (0–21600 required), `channel` optional | `Manage Channels` |
+| `nuke` | — (wirkt auf den aktuellen Kanal) | `Manage Channels` |
 | `note` | `user`, `note` (beide required) | — |
 | `softban` | `user` (required), `reason`, `delete-days` (Default 1) optional | `Ban Members` |
 | `reload` | — | `Manage Guild` |
@@ -183,8 +285,9 @@ autoMod:
 
   antiPhishing:
     enabled: true
-    useBuiltinHeuristics: true
-    customBlocklist: []
+    useBuiltinHeuristics: true   # Marken-Impersonation + verdächtige TLDs, siehe Abschnitt 2.6
+    useUrlhaus: true             # externer Bedrohungsfeed (abuse.ch), siehe Abschnitt 2.6
+    customBlocklist: []          # eigene, fest gesperrte Domains (inkl. Subdomains)
     action: timeout
     timeoutMinutes: 60
     deleteMessages: true
@@ -193,9 +296,24 @@ report:
   enabled: true
   cooldownSeconds: 60
   dailyLimit: 10
+
+messageLog:
+  enabled: true
+  logEdits: true
+  logDeletes: true
+  ignoreBots: true
+
+nuke:
+  gifUrl: ""   # siehe Abschnitt 2.8
 ```
 
-**Hinweis:** `antiPhishing` (Marken-Impersonation-Erkennung, verdächtige TLD+Bait-Keyword-Heuristik) ist im Code-Schema vorhanden, fehlt aber in der mitgelieferten `mod.example.yml` — bei bestehenden Installationen ggf. manuell ergänzen.
+**Hinweis:** `configs/modules/mod.example.yml` (nur eine Referenzdatei, hat keinen Effekt auf den laufenden Bot)
+ist seit mehreren Modul-Erweiterungen nicht mehr aktuell und listet längst nicht alle Schlüssel, die der Bot
+tatsächlich versteht — als Nachschlagewerk gilt diese Wiki-Seite bzw. direkt `src/modules/mod/settings.ts`.
+Die tatsächlich verwendete `configs/modules/mod.yml` wird beim ersten Start automatisch mit allen aktuellen
+Default-Werten angelegt (inkl. `antiPhishing`, `messageLog`, `nuke` usw.) — dafür muss man nichts manuell
+ergänzen. Fehlt nach einem Bot-Update ein neuer Schlüssel in einer bereits bestehenden `mod.yml`, wird er beim
+nächsten Neustart automatisch mit seinem Default-Wert ergänzt, ohne bestehende Einstellungen zu verändern.
 
 Feld-Übersicht:
 
@@ -237,6 +355,7 @@ Ist `channels.mod-log` leer, wird das Mod-Log stillschweigend übersprungen (kei
 | `/mod ban`/`tempban`/`softban`/`unban` | + `Ban Members` |
 | `/mod clear`/`purge` | + `Manage Messages` |
 | `/mod slowmode` | + `Manage Channels` |
+| `/mod nuke` | + `Manage Channels` (ersetzt den ganzen Kanal, siehe Abschnitt 2.8) |
 | `/mod reload` | `Manage Guild` |
 | `/report` | keine (außer Selbst/Bot/Mod-Ausschluss) |
 | Report-Button Deny/Warn | `Moderate Members` oder `roles.support` |
